@@ -45,3 +45,15 @@ Example (technical mention, not an ad):
 Output: {"ad_segments": [{"segment_offset": 4933.2, "confidence": 0.75}], "content_type": "technical_discussion", "confidence": 0.45}
 
 
+Here are some specific sponsors to watch for:
+- Helix Sleep -- mattresses
+- Cozy Earth -- bedding, clothing, etc.
+- EveryDollar -- budgetting app
+- Balance of Nature -- supplement
+- Birch Gold -- precious medals company
+- Boll and Branch -- bedding
+- ExpressVPN -- VPN provider
+- Delete Me -- removes personal info from the internet
+- Fairwinds Credit Union -- online bank
+- Acorns -- investing app
+- My PHD Weight Loss -- weight loss experts
