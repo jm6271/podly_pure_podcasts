@@ -1,4 +1,0 @@
-podly.millerscustomcabinets.com {
-	reverse_proxy podly:5001
-}
-
