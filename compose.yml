@@ -30,28 +30,9 @@ services:
       retries: 3
       start_period: 10s
 
-  caddy:
-    image: caddy:2
-    container_name: caddy
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./caddy/Caddyfile:/etc/caddy/Caddyfile
-      - caddy_data:/data
-      - caddy_config:/config
-    networks:
-      - web
-    restart: unless-stopped
-
 networks:
   web:
     external: true
 
   default:
     name: podly-pure-podcasts-network
-
-volumes:
-  caddy_data:
-  caddy_config:
-
