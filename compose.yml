@@ -3,7 +3,7 @@ services:
     container_name: podly-pure-podcasts
     expose:
       - "5001"
-    image: ghcr.io/${REPO_OWNER:-jdrbc}/podly-pure-podcasts:${BRANCH:-main-latest}
+    image: ghcr.io/podly-pure-podcasts/podly-pure-podcasts:${BRANCH:-main-latest}
     networks:
       - web
       - default

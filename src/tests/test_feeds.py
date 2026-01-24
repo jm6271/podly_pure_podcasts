@@ -22,6 +22,7 @@ from app.feeds import (
     refresh_feed,
 )
 from app.models import Feed, Post
+from app.runtime_config import config as runtime_config
 
 logger = logging.getLogger("global_logger")
 
@@ -79,6 +80,7 @@ class MockFeed:
         self.image_url = image_url
         self.posts = []
         self.user_feeds = []
+        self.auto_whitelist_new_episodes_override = None
 
 
 @pytest.fixture
@@ -245,6 +247,24 @@ def test_should_auto_whitelist_true_when_no_users(
     mock_db_session.query.return_value.first.return_value = None
     mock_feed.user_feeds = []
     assert _should_auto_whitelist_new_posts(mock_feed) is True
+
+
+def test_should_auto_whitelist_respects_feed_override_true(monkeypatch, mock_feed):
+    monkeypatch.setattr(
+        "app.feeds.config",
+        SimpleNamespace(automatically_whitelist_new_episodes=False),
+    )
+    mock_feed.auto_whitelist_new_episodes_override = True
+    assert _should_auto_whitelist_new_posts(mock_feed) is True
+
+
+def test_should_auto_whitelist_respects_feed_override_false(monkeypatch, mock_feed):
+    monkeypatch.setattr(
+        "app.feeds.config",
+        SimpleNamespace(automatically_whitelist_new_episodes=True),
+    )
+    mock_feed.auto_whitelist_new_episodes_override = False
+    assert _should_auto_whitelist_new_posts(mock_feed) is False
 
 
 @mock.patch("app.feeds.writer_client")
@@ -556,52 +576,130 @@ def test_generate_feed_xml_filters_processed_whitelisted(
 ):
     # Use real models to verify query filtering logic
     with app.app_context():
-        feed = Feed(rss_url="http://example.com/feed", title="Feed 1")
-        db.session.add(feed)
-        db.session.commit()
+        original_flag = getattr(runtime_config, "autoprocess_on_download", False)
+        runtime_config.autoprocess_on_download = False
+        try:
+            feed = Feed(rss_url="http://example.com/feed", title="Feed 1")
+            db.session.add(feed)
+            db.session.commit()
 
-        processed = Post(
-            feed_id=feed.id,
-            title="Processed",
-            guid="good",
-            download_url="http://example.com/good.mp3",
-            processed_audio_path="/tmp/good.mp3",
-            whitelisted=True,
-        )
-        unprocessed = Post(
-            feed_id=feed.id,
-            title="Unprocessed",
-            guid="bad1",
-            download_url="http://example.com/bad1.mp3",
-            processed_audio_path=None,
-            whitelisted=True,
-        )
-        not_whitelisted = Post(
-            feed_id=feed.id,
-            title="Not Whitelisted",
-            guid="bad2",
-            download_url="http://example.com/bad2.mp3",
-            processed_audio_path="/tmp/bad2.mp3",
-            whitelisted=False,
-        )
+            processed = Post(
+                feed_id=feed.id,
+                title="Processed",
+                guid="good",
+                download_url="http://example.com/good.mp3",
+                processed_audio_path="/tmp/good.mp3",
+                whitelisted=True,
+            )
+            unprocessed = Post(
+                feed_id=feed.id,
+                title="Unprocessed",
+                guid="bad1",
+                download_url="http://example.com/bad1.mp3",
+                processed_audio_path=None,
+                whitelisted=True,
+            )
+            not_whitelisted = Post(
+                feed_id=feed.id,
+                title="Not Whitelisted",
+                guid="bad2",
+                download_url="http://example.com/bad2.mp3",
+                processed_audio_path="/tmp/bad2.mp3",
+                whitelisted=False,
+            )
 
-        db.session.add_all([processed, unprocessed, not_whitelisted])
-        db.session.commit()
+            db.session.add_all([processed, unprocessed, not_whitelisted])
+            db.session.commit()
 
-        mock_feed_item.side_effect = (
-            lambda post, prepend_feed_title=False: mock.MagicMock(post_guid=post.guid)
-        )
-        mock_rss = mock_rss_2.return_value
-        mock_rss.to_xml.return_value = "<rss></rss>"
+            mock_feed_item.side_effect = (
+                lambda post, prepend_feed_title=False: mock.MagicMock(
+                    post_guid=post.guid
+                )
+            )
+            mock_rss = mock_rss_2.return_value
+            mock_rss.to_xml.return_value = "<rss></rss>"
 
-        result = generate_feed_xml(feed)
+            result = generate_feed_xml(feed)
 
-        called_posts = [call.args[0] for call in mock_feed_item.call_args_list]
-        assert called_posts == [processed]
+            called_posts = [call.args[0] for call in mock_feed_item.call_args_list]
+            assert called_posts == [processed]
 
-        mock_rss_2.assert_called_once()
-        mock_rss.to_xml.assert_called_once_with("utf-8")
-        assert result == "<rss></rss>"
+            mock_rss_2.assert_called_once()
+            mock_rss.to_xml.assert_called_once_with("utf-8")
+            assert result == "<rss></rss>"
+        finally:
+            runtime_config.autoprocess_on_download = original_flag
+
+
+@mock.patch("app.feeds.feed_item")
+@mock.patch("app.feeds.PyRSS2Gen.Image")
+@mock.patch("app.feeds.PyRSS2Gen.RSS2")
+def test_generate_feed_xml_includes_all_when_autoprocess_enabled(
+    mock_rss_2, mock_image, mock_feed_item, app
+):
+    with app.app_context():
+        original_flag = getattr(runtime_config, "autoprocess_on_download", False)
+        runtime_config.autoprocess_on_download = True
+        try:
+            feed = Feed(rss_url="http://example.com/feed", title="Feed 1")
+            db.session.add(feed)
+            db.session.commit()
+
+            processed = Post(
+                feed_id=feed.id,
+                title="Processed",
+                guid="good",
+                download_url="http://example.com/good.mp3",
+                processed_audio_path="/tmp/good.mp3",
+                whitelisted=True,
+                release_date=datetime.datetime(
+                    2024, 1, 3, tzinfo=datetime.timezone.utc
+                ),
+            )
+            unprocessed = Post(
+                feed_id=feed.id,
+                title="Unprocessed",
+                guid="bad1",
+                download_url="http://example.com/bad1.mp3",
+                processed_audio_path=None,
+                whitelisted=True,
+                release_date=datetime.datetime(
+                    2024, 1, 2, tzinfo=datetime.timezone.utc
+                ),
+            )
+            not_whitelisted = Post(
+                feed_id=feed.id,
+                title="Not Whitelisted",
+                guid="bad2",
+                download_url="http://example.com/bad2.mp3",
+                processed_audio_path="/tmp/bad2.mp3",
+                whitelisted=False,
+                release_date=datetime.datetime(
+                    2024, 1, 1, tzinfo=datetime.timezone.utc
+                ),
+            )
+
+            db.session.add_all([processed, unprocessed, not_whitelisted])
+            db.session.commit()
+
+            mock_feed_item.side_effect = (
+                lambda post, prepend_feed_title=False: mock.MagicMock(
+                    post_guid=post.guid
+                )
+            )
+            mock_rss = mock_rss_2.return_value
+            mock_rss.to_xml.return_value = "<rss></rss>"
+
+            result = generate_feed_xml(feed)
+
+            called_posts = [call.args[0] for call in mock_feed_item.call_args_list]
+            assert called_posts == [processed, unprocessed, not_whitelisted]
+
+            mock_rss_2.assert_called_once()
+            mock_rss.to_xml.assert_called_once_with("utf-8")
+            assert result == "<rss></rss>"
+        finally:
+            runtime_config.autoprocess_on_download = original_flag
 
 
 @mock.patch("app.feeds.Post")
