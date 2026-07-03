@@ -14,36 +14,34 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        id: python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
       - name: Install ffmpeg
-        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+        run: sudo apt-get update -y && sudo apt-get install -y --no-install-recommends ffmpeg
 
-      - name: Install pipenv
-        run: pip install pipenv
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
 
       - name: Install dependencies
-        run: pipenv install --dev
+        run: uv sync --frozen --extra dev
 
-      - name: Install dependencies for mypy
-        run: pipenv run mypy --install-types
+      - name: Run ty check
+        run: uv run ty check
 
-      - name: Run mypy
-        run: pipenv run mypy src --explicit-package-bases --exclude 'migrations' --exclude 'build' --exclude 'scripts' --exclude 'src/tests' --exclude 'src/tests/test_routes.py' --exclude 'src/app/routes.py'
+      - name: Run ruff check
+        run: uv run ruff check src
 
-      - name: Run pylint
-        run: pipenv run pylint src --ignore=migrations,tests
-
-      - name: Run black
-        run: pipenv run black --check src
-
-      - name: Run isort
-        run: pipenv run isort --check-only src
+      - name: Run ruff format
+        run: uv run ruff format --check src
 
       - name: Run pytest
-        run: pipenv run pytest --disable-warnings
+        run: uv run pytest --disable-warnings
