@@ -1,5 +1,7 @@
 # [2.4.0](https://github.com/podly-pure-podcasts/podly_pure_podcasts/compare/v2.3.0...v2.4.0) (2026-06-04)
 
+# 1.0.0 (2026-05-05)
+
 
 ### Bug Fixes
 
@@ -40,9 +42,14 @@
 * use expunge_all() not expire_all() — actually frees identity map ([e2b89d1](https://github.com/podly-pure-podcasts/podly_pure_podcasts/commit/e2b89d1ad84a93e1bb6642f43ea68e0030649517))
 * use original episode duration for ad percentage and timeline stats ([984f9c7](https://github.com/podly-pure-podcasts/podly_pure_podcasts/commit/984f9c7ff751c93ca061288ccca0af21cc5c293e))
 * use original episode duration for processing cost calculation ([bf9a532](https://github.com/podly-pure-podcasts/podly_pure_podcasts/commit/bf9a5329724fc8663cc7d2a6c313c70877d0c7ca))
+* feed urls were not being properly generated with reverse proxy settings ([be7dbfd](https://github.com/jm6271/podly_pure_podcasts/commit/be7dbfdf65157cc601028e1eb373a541266504dd))
+* reformat completed by ci.sh ([9dae208](https://github.com/jm6271/podly_pure_podcasts/commit/9dae20816d7485048ac13f74b6671019eb9b88ba))
+* update container name and network name to podly-pure-podcasts across all compose files ([4a4603e](https://github.com/jm6271/podly_pure_podcasts/commit/4a4603efa07ba95b6d0123cfa72ff68447df8310))
+>>>>>>> 4d9afe2c87146f4fea766511cf1010a55955fecc
 
 
 ### Features
+
 
 * add advertisement removal summary and processing stats to the UI ([046d112](https://github.com/podly-pure-podcasts/podly_pure_podcasts/commit/046d112b08fafea629472f536e3a2ea378c3b234))
 * Add advertisement removal summary and timeline visualization to LLMProcessingStats component that was accidently removed in a previous refactoring  PR ([63682d9](https://github.com/podly-pure-podcasts/podly_pure_podcasts/commit/63682d9ad21f63435d6635a3fd07f8a5e746b0de))
@@ -74,3 +81,11 @@
 ### Performance Improvements
 
 * **feed:** drop synchronous refresh_feed from GET /feed/<id> ([bef20fd](https://github.com/podly-pure-podcasts/podly_pure_podcasts/commit/bef20fd03bfff9597f3defe4ca4deb068b4b9ef9))
+* add support for local LLMs ([c2ded6b](https://github.com/jm6271/podly_pure_podcasts/commit/c2ded6b9eff1d7f4d8665be543255d74b8baf13f))
+* add support for local LLMs ([0320f24](https://github.com/jm6271/podly_pure_podcasts/commit/0320f24c9b121c04f264b57d8456c7cecaf43776))
+* **processing:** add JobManager; refactor processor/API/UI; remove legacy jobs ([01a139f](https://github.com/jm6271/podly_pure_podcasts/commit/01a139f340ea7cf6221341598d459ee1c6c396c0))
+
+
+### Reverts
+
+* test_process_audio.py ([bbbd0f1](https://github.com/jm6271/podly_pure_podcasts/commit/bbbd0f18e85710820947ba3f4fd35d9a40b390ae))
